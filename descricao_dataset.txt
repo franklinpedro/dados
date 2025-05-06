@@ -1,0 +1,37 @@
+Descrição do Conjunto de Dados
+
+id: identificador de cada música
+
+artist: Nome do artista.
+
+track.name: Nome da música.
+
+popularity: Quanto maior o valor, mais popular é a música.
+
+danceability: Mede o quão apropriada a faixa é para dançar, com base em elementos musicais como tempo e ritmo.
+
+energy: Medida de 0.0 a 1.0 que representa a intensidade e atividade percebida.
+
+key: Tom da faixa. Números inteiros correspondem às notas musicais conforme a notação padrão 
+
+loudness: Volume geral da faixa em decibéis (dB), calculado como média ao longo de toda a música.
+
+mode: Modalidade da faixa — 1 indica modo maior, 0 indica modo menor.
+
+speechiness: Detecta a presença de palavras faladas. Valores próximos de 1.0 indicam fala predominante. Acima de 0.66 indica fala pura; entre 0.33 e 0.66 pode indicar mistura de fala e música (como rap); abaixo de 0.33 indica predominantemente música.
+
+acousticness: Medida de confiança (de 0.0 a 1.0) de que a faixa é acústica. Quanto mais próximo de 1.0, maior a confiança.
+
+instrumentalness: Mede a probabilidade de uma faixa não conter vocais. Valores próximos de 1.0 indicam maior chance de ser instrumental. Valores acima de 0.5 tendem a indicar faixas instrumentais.
+
+liveness: Mede a presença de audiência na gravação. Valores altos indicam maior chance de ser uma performance ao vivo. Acima de 0.8 indica forte probabilidade de apresentação ao vivo.
+
+valence: Mede de 0.0 a 1.0 o quão positiva é a sensação transmitida pela música. Valores altos indicam emoções positivas (felicidade, euforia), enquanto valores baixos indicam emoções negativas (tristeza, raiva).
+
+tempo: Tempo estimado da faixa em batidas por minuto (BPM), que representa a velocidade da música.
+
+duration in milliseconds: Duração da música em milissegundos.
+
+time_signature: Convenção de notação que indica quantos tempos há em cada compasso e qual nota equivale a um tempo.
+
+Class: Gênero da faixa.
