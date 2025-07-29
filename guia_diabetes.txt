@@ -1,0 +1,21 @@
+GUIA PARA NOSSO RELATÓRIO
+
+1. Introdução
+
+O Diabetes Mellitus é uma condição metabólica crônica que afeta uma parcela significativa da população mundial e, quando não controlada, pode levar a complicações graves, como retinopatia, nefropatia, neuropatia, problemas circulatórios nos membros inferiores, infartos e acidentes vasculares cerebrais. A detecção precoce e o diagnóstico adequado são fundamentais para a prevenção dessas complicações.
+
+Este relatório apresenta uma análise baseada no artigo "Data-driven diabetes mellitus prediction and management: a comparative evaluation of decision tree classifier and artificial neural network models along with statistical analysis", que compara o desempenho de dois modelos preditivos — árvore de decisão e rede neural artificial — na identificação de pacientes com diabetes mellitus.
+
+2. Descrição do Conjunto de Dados
+
+O conjunto de dados utilizado nesta pesquisa é composto por informações de 1.000 pacientes que receberam atendimento no renomado Hospital Universitário Al-Kindy, no Iraque. A idade dos pacientes varia entre 20 e 79 anos. A amostra inclui 435 mulheres e 565 homens, o que confere ao conjunto um componente demográfico relevante.
+
+Os pacientes foram classificados em três grupos distintos: 837 foram identificados como diabéticos (Y), 103 como não diabéticos (N) e 53 como prováveis diabéticos (P). Essa estratificação é essencial para as análises e previsões subsequentes.
+
+O conjunto de dados é abrangente e inclui 11 importantes indicadores bioquímicos: nível de glicose no sangue, idade, sexo, creatinina (Cr), índice de massa corporal (IMC), ureia, colesterol total (Chol), perfil lipídico em jejum (incluindo LDL, VLDL, triglicerídeos (TG) e HDL) e hemoglobina glicada (HbA1c). Todos esses indicadores foram obtidos a partir de exames clínicos, fornecendo uma base sólida para a análise estatística e preditiva.
+
+3. Modelo de Árvore de Decisão
+
+4. Avaliação do Modelo
+
+5. Considerações Finais
