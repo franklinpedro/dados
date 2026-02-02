@@ -1,0 +1,21 @@
+As variáveis do conjunto são:
+
+is_canceled (resposta): reserva fi cancelada? É binária.
+
+lead_time: Tempo entre reserva e chegada. 
+
+adr: Tarifa média diária (preço).
+
+total_of_special_requests: Quantidade de pedidos especiais.
+
+stays_in_week_nights: Duração da estadia.
+
+previous_cancellations: Histórico do cliente sobre cancelamentos.
+
+is_repeated_guest (Binária): Fidelidade.
+
+deposit_type: Se houve depósito.
+
+market_segment: Origem da reserva (Direta, Agência, Corporativo).
+
+hotel: Resort ou Hotel de cidade.
