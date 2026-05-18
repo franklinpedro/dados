@@ -1,0 +1,32 @@
+Conjunto de dados: gapminder
+========================================================
+
+1. Instale os pacotes gapminder e ggplot2
+
+2. Carregue os pacotes
+
+3. Explore o conjunto gapminder: dimensões, variáveis e resumo
+
+4. Crie um subconjunto com apenas o ano de 2007
+
+5. Quantos países existem em cada continente?
+   Use um gráfico de barras.
+
+6. Como se distribui a expectativa de vida entre os países?
+   Use um histograma.
+
+7. A expectativa de vida é diferente entre os continentes?
+   Use um boxplot.
+
+8. Países com maior PIB per capita têm maior expectativa de vida?
+   Represente cada país por um ponto, use cor para indicar o
+   continente e tamanho do ponto para indicar a população.
+   Use um gráfico de dispersão.
+
+   8a. Construa o gráfico com o PIB per capita na escala original.
+   8b. Construa o mesmo gráfico aplicando transformação logarítmica
+       no eixo do PIB per capita.
+   8c. Compare os dois: em qual deles a relação entre PIB e
+       expectativa de vida fica mais clara?
+
+========================================================
