@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PCA e Lagrange — laboratório geométrico</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1120;--panel:#111b2d;--line:#2c3b53;--text:#f1f5fb;--muted:#adbad0;--purple:#c398ff;--orange:#ffbf62;--green:#5ce0b0;--blue:#79bdff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,sans-serif}button,input,select{font:inherit}button,select{background:#19263c;color:var(--text);border:1px solid #3a4c68;border-radius:6px;padding:8px 11px}button{cursor:pointer}button:hover{background:#263854}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:3px}button[aria-pressed=true]{background:#35496b;border-color:var(--blue)}input[type=range]{width:100%;accent-color:var(--purple)}input[type=checkbox]{accent-color:var(--purple)}h1{font-size:20px;line-height:1.25;margin:0;font-weight:600}h2{font-size:14px;margin:0 0 8px;font-weight:600;color:var(--muted)}p{margin:7px 0}header{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}header p{font-size:13px;color:var(--muted);margin:4px 0 0}.app{min-height:100vh;display:flex;flex-direction:column}.workspace{display:grid;grid-template-columns:290px minmax(0,1fr);flex:1;min-height:540px}aside{padding:18px 20px;background:var(--panel);border-right:1px solid var(--line)}.equation{font-family:Georgia,serif;font-size:18px;line-height:1.7;margin:9px 0 15px}.matrix{font-family:ui-monospace,monospace;white-space:pre;margin:8px 0;color:var(--muted)}.row{display:flex;justify-content:space-between;gap:12px;margin:7px 0}.number{font-variant-numeric:tabular-nums;white-space:nowrap}.row span:first-child{color:var(--muted)}.accent{color:var(--orange)}.separator{border:0;border-top:1px solid var(--line);margin:17px 0}.small{font-size:12px;color:var(--muted)}.scene{position:relative;min-width:0;min-height:540px}#scene{width:100%;height:100%;display:block;position:absolute;inset:0;touch-action:none;cursor:grab}#scene:active{cursor:grabbing}.hint{position:absolute;bottom:12px;left:20px;color:var(--muted);font-size:12px;pointer-events:none}.legend{position:absolute;top:16px;left:20px;right:20px;display:flex;gap:14px;flex-wrap:wrap;pointer-events:none;font-size:12px;color:var(--muted)}.legend span{display:inline-flex;align-items:center;gap:6px}.swatch{width:18px;height:3px;background:var(--purple)}.orange{background:var(--orange)}.green{background:var(--green)}.blue{background:var(--blue)}footer{padding:14px 22px;border-top:1px solid var(--line);background:var(--panel)}.control-grid{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:20px;align-items:center}.actions{display:flex;gap:7px;flex-wrap:wrap}.checks{display:flex;gap:15px;flex-wrap:wrap;margin-top:11px;font-size:13px}.checks label{display:inline-flex;align-items:center;gap:6px}.status{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);min-height:35px;font-size:14px}.choices{display:flex;gap:10px;flex-wrap:wrap}.choices label{display:flex;align-items:center;gap:8px;font-size:13px}details{font-size:13px;color:var(--muted);margin-top:14px}summary{cursor:pointer}#curve{width:100%;height:115px;cursor:crosshair;display:block}.curve-label{font-size:12px;color:var(--muted);margin-top:15px}.sr-only{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden}@media(min-width:1000px){.scene{min-height:610px}}@media(max-width:800px){.workspace{grid-template-columns:230px minmax(0,1fr)}aside{padding:14px}.control-grid{grid-template-columns:1fr;gap:10px}.scene{min-height:590px}.legend{font-size:11px;gap:9px}.hint{max-width:250px}}@media(max-width:600px){header{padding:14px}h1{font-size:18px}.workspace{display:flex;flex-direction:column}.scene{order:0;min-height:440px}aside{order:1;border-right:0;border-top:1px solid var(--line)}.equation{font-size:17px}#curve{max-width:450px}.legend{left:12px;right:12px}.hint{left:12px;bottom:8px}footer{padding:14px}.choices label{flex-wrap:wrap}select{max-width:100%}}
+</style>
+</head>
+<body>
+<main class="app">
+<header><div><h1>PCA e Lagrange</h1><p>Direção unitária, variância projetada e gradientes</p></div><div class="choices"><label>Exemplo <select id="model"><option value="correlated">Σ = [[3, 2], [2, 3]]</option><option value="diagonal">Σ = [[2, 0], [0, 1]]</option></select></label><label>Superfície <select id="surface"><option value="f">f(a) — variância</option><option value="g">g(a) — restrição</option></select></label><button id="fullscreen" type="button">Tela cheia</button></div></header>
+<div class="workspace">
+<aside>
+<h2 id="surface-title">Maximizar a variância</h2>
+<div class="equation" id="formula">f(a) = 3a₁² + 4a₁a₂ + 3a₂²</div>
+<div>Restrição: <strong>‖a‖² = a₁² + a₂² = 1</strong></div>
+<div class="small">O ponto a representa coeficientes de uma direção, não um indivíduo.</div>
+<hr class="separator">
+<div class="row"><span>Ângulo θ</span><strong class="number" id="theta-value"></strong></div>
+<div class="row"><span>a = (a₁, a₂)</span><strong class="number" id="a-value"></strong></div>
+<div class="row"><span>Variância f(a)</span><strong class="number accent" id="f-value"></strong></div>
+<div class="row"><span>g(a)</span><strong class="number" id="g-value">0,000</strong></div>
+<hr class="separator">
+<div class="row"><span>∇f = 2Σa</span><span class="number" id="gf-value"></span></div>
+<div class="row"><span>∇g = 2a</span><span class="number" id="gg-value"></span></div>
+<div class="row"><span>Derivada tangente</span><strong class="number" id="derivative"></strong></div>
+<div class="small">Taxa de variação por radiano ao percorrer o círculo no sentido anti-horário.</div>
+<div class="curve-label">Variância f(a) ao longo do círculo · clique para mover</div>
+<canvas id="curve" aria-label="Gráfico da variância conforme o ângulo, com posição atual selecionável." role="img"></canvas>
+<details><summary>Como interpretar</summary><p>A curva roxa contém as alturas da superfície sobre o círculo unitário. A parede liga cada direção no chão à sua altura.</p><p>Os gradientes são vetores no plano (a₁,a₂). As setas usam um fator comum de escala de 0,10. A seta azul mostra a componente tangente de ∇f.</p><p>No máximo e no mínimo restritos, a derivada tangente é zero. Para a primeira componente, escolhemos o maior autovalor.</p><p>Exemplos didáticos. O segundo reproduz a função do arquivo de referência fornecido pelo professor. Sem bibliotecas externas ou conexão com a internet.</p></details>
+</aside>
+<section class="scene" aria-label="Visualização tridimensional interativa">
+<canvas id="scene" role="img" aria-label="Superfície, círculo unitário, parede cilíndrica, curva de interseção, pontos de máximo e mínimo e gradientes. Arraste para girar e use a roda para ampliar."></canvas>
+<div class="legend"><span><i class="swatch"></i>Curva sobre o círculo</span><span><i class="swatch orange"></i>∇f</span><span><i class="swatch green"></i>∇g</span><span><i class="swatch blue"></i>Componente tangente</span></div>
+<div class="hint">Arraste para girar · roda para ampliar · vista superior para comparar os gradientes</div>
+</section>
+</div>
+<footer>
+<div class="control-grid"><label for="angle">Posição no círculo: <strong class="number" id="angle-label">20°</strong><input id="angle" type="range" min="0" max="360" step="0.5" value="20"></label><div class="actions"><button id="play" type="button" aria-pressed="false">Percorrer círculo</button><button id="maximum" type="button">1ª CP: máximo</button><button id="minimum" type="button">Mínimo</button><button id="top" type="button">Vista superior</button><button id="camera" type="button">Vista 3D</button></div></div>
+<div class="checks"><label><input id="mesh" type="checkbox" checked>Superfície</label><label><input id="wall" type="checkbox" checked>Parede da restrição</label><label><input id="gradients" type="checkbox" checked>Gradientes</label><label><input id="tangent" type="checkbox" checked>Componente tangente</label><label><input id="levels" type="checkbox">Curvas de nível</label></div>
+<div class="status" id="status" aria-live="polite"></div>
+</footer>
+</main>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),canvas=$('scene'),ctx=canvas.getContext('2d'),curve=$('curve'),cx=curve.getContext('2d');
+const colors={text:'#edf4ff',muted:'#9eacc2',grid:'rgba(153,176,210,.25)',purple:'#c398ff',orange:'#ffbf62',green:'#5ce0b0',blue:'#79bdff'};
+let theta=20*Math.PI/180,az=.70,el=.49,zoom=1,model='correlated',surface='f',playing=false,lastTime=0,frame=0,drag=null;
+let width=900,height=650,cw=250,ch=115,dpr=1,polygons=[],wire=[],cachedKey='';
+const fmt=(n,d=3)=>Math.abs(n)<.5*10**(-d)?(0).toFixed(d).replace('.',','):n.toFixed(d).replace('.',',');
+function M(){return model==='diagonal'?{s11:2,s12:0,s22:1,hi:2,lo:1,angle:0}:{s11:3,s12:2,s22:3,hi:5,lo:1,angle:Math.PI/4};}
+function f(x,y){const m=M();return m.s11*x*x+2*m.s12*x*y+m.s22*y*y;}
+function g(x,y){return x*x+y*y-1;}
+function value(x,y){return surface==='f'?f(x,y):g(x,y);}
+function zscale(){return surface==='f'?1/M().hi:1;}
+function project(x,y,z){let X=x*Math.cos(az)-y*Math.sin(az),Y=x*Math.sin(az)+y*Math.cos(az),Z=z*zscale()-.38;
+let depth=Y*Math.cos(el)-Z*Math.sin(el),up=Y*Math.sin(el)+Z*Math.cos(el),scale=Math.min(width/4.8,height/4.25)*zoom;
+return{x:width*.5+X*scale,y:height*.57-up*scale,depth};}
+function line(points,color,lw=1,dash=[]){if(!points.length)return;ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.setLineDash(dash);points.forEach((p,i)=>{let q=project(...p);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});ctx.stroke();ctx.setLineDash([]);}
+function dot(p,color,r=5){const q=project(...p);ctx.beginPath();ctx.arc(q.x,q.y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='#0b1120';ctx.stroke();}
+function text(p,label,color=colors.text,dx=0,dy=0){const q=project(...p);ctx.fillStyle=color;ctx.font='13px system-ui,sans-serif';ctx.textAlign='center';ctx.fillText(label,q.x+dx,q.y+dy);}
+function arrow(p,v,color,lw=3){if(Math.hypot(...v)<1e-7)return;let q=p.map((x,i)=>x+v[i]),A=project(...p),B=project(...q),an=Math.atan2(B.y-A.y,B.x-A.x);line([p,q],color,lw);ctx.beginPath();ctx.moveTo(B.x,B.y);ctx.lineTo(B.x-10*Math.cos(an-.4),B.y-10*Math.sin(an-.4));ctx.lineTo(B.x-10*Math.cos(an+.4),B.y-10*Math.sin(an+.4));ctx.closePath();ctx.fillStyle=color;ctx.fill();}
+function buildSurface(){let key=model+surface;if(key===cachedKey)return;cachedKey=key;polygons=[];wire=[];let rings=24,sectors=80,R=1.3;
+const p=(r,t)=>[r*Math.cos(t),r*Math.sin(t),value(r*Math.cos(t),r*Math.sin(t))];
+for(let i=0;i<rings;i++)for(let j=0;j<sectors;j++){let r0=R*i/rings,r1=R*(i+1)/rings,t0=j*2*Math.PI/sectors,t1=(j+1)*2*Math.PI/sectors;polygons.push([p(r0,t0),p(r1,t0),p(r1,t1),p(r0,t1)]);}
+for(let i=1;i<=13;i++){let path=[];for(let j=0;j<=160;j++)path.push(p(R*i/13,j*2*Math.PI/160));wire.push(path);}
+for(let j=0;j<32;j++){let path=[];for(let i=0;i<=48;i++)path.push(p(R*i/48,j*2*Math.PI/32));wire.push(path);}}
+function drawSurface(){buildSurface();const faces=polygons.map(p=>({p,depth:p.reduce((v,q)=>v+project(...q).depth,0)/p.length})).sort((a,b)=>b.depth-a.depth);
+for(const {p} of faces){ctx.beginPath();p.forEach((q,i)=>{q=project(...q);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});ctx.closePath();ctx.fillStyle='rgba(111,142,183,.035)';ctx.fill();}
+wire.forEach(p=>line(p,'rgba(169,190,220,.20)',.85));}
+function baseAxes(){let maxZ=surface==='f'?M().hi*1.65:1.05,minZ=surface==='g'?-1.05:0;line([[-1.6,0,0],[1.6,0,0]],colors.grid,1.3);line([[0,-1.6,0],[0,1.6,0]],colors.grid,1.3);line([[0,0,minZ],[0,0,maxZ]],colors.grid,1.3);
+text([1.67,0,0],'a₁');text([0,1.67,0],'a₂');text([0,0,maxZ],surface+'(a)',colors.text,0,-12);
+for(let z of surface==='f'?[0,M().lo,M().hi]:[-1,0,1])text([0,0,z],fmt(z,0),colors.muted,-14,0);
+for(let v of [-1,1]){text([v,0,0],String(v),colors.muted,0,16);text([0,v,0],String(v),colors.muted,0,16);}}
+function circlePath(zfun){let p=[];for(let i=0;i<=180;i++){let t=i*2*Math.PI/180;p.push([Math.cos(t),Math.sin(t),zfun(t)]);}return p;}
+function levels(){let vals=surface==='f'?[1,2,3,4,5].filter(x=>x<=M().hi):[-.75,0,.5];for(let level of vals){let p=[];for(let i=0;i<=180;i++){let t=i*Math.PI*2/180,r=surface==='f'?Math.sqrt(level/f(Math.cos(t),Math.sin(t))):Math.sqrt(level+1);p.push([r*Math.cos(t),r*Math.sin(t),0]);}line(p,'rgba(121,189,255,.32)',1);}}
+function tag(p,label){let q=project(...p);ctx.font='500 13px system-ui,sans-serif';const w=ctx.measureText(label).width+20;let x=Math.max(8,Math.min(width-w-8,q.x-w/2)),y=Math.max(65,Math.min(height-45,q.y-35));ctx.fillStyle='rgba(12,22,39,.94)';ctx.beginPath();ctx.roundRect(x,y,w,26,5);ctx.fill();ctx.strokeStyle='rgba(255,191,98,.6)';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle=colors.orange;ctx.textAlign='center';ctx.fillText(label,x+w/2,y+18);}
+function draw(){ctx.clearRect(0,0,width,height);baseAxes();if($('mesh').checked)drawSurface();if($('levels').checked)levels();
+line(circlePath(()=>0),colors.purple,2.2);
+if(surface==='f'&&$('wall').checked){for(let i=0;i<48;i++){let t=i*Math.PI*2/48,x=Math.cos(t),y=Math.sin(t);line([[x,y,0],[x,y,f(x,y)]],'rgba(195,152,255,.23)',1);} }
+if(surface==='f')line(circlePath(t=>f(Math.cos(t),Math.sin(t))),colors.purple,3.5);
+let m=M(),x=Math.cos(theta),y=Math.sin(theta),h=value(x,y),gf=[2*(m.s11*x+m.s12*y),2*(m.s12*x+m.s22*y)],gg=[2*x,2*y],tan=[-y,x],d=gf[0]*tan[0]+gf[1]*tan[1];
+if(surface==='f'){for(let i=0;i<2;i++){let t=m.angle+i*Math.PI;dot([Math.cos(t),Math.sin(t),m.hi],colors.green,6);let u=t+Math.PI/2;dot([Math.cos(u),Math.sin(u),m.lo],colors.blue,4);}}
+line([[0,0,0],[x,y,0]],colors.orange,2);line([[x,y,0],[x,y,h]],colors.orange,2,[5,4]);
+if($('gradients').checked){line([[x-.45*tan[0],y-.45*tan[1],0],[x+.45*tan[0],y+.45*tan[1],0]],'rgba(230,239,255,.5)',1.5,[4,3]);arrow([x,y,0],[gf[0]*.1,gf[1]*.1,0],colors.orange);arrow([x,y,0],[gg[0]*.1,gg[1]*.1,0],colors.green);}
+if($('tangent').checked)arrow([x,y,0],[d*tan[0]*.1,d*tan[1]*.1,0],colors.blue,3);
+dot([x,y,0],colors.orange,5);dot([x,y,h],colors.orange,7);tag([x,y,h],surface+'(a) = '+fmt(h));updateReadouts(x,y,gf,gg,d);drawCurve();}
+function updateReadouts(x,y,gf,gg,d){let deg=theta*180/Math.PI;$('angle').value=String(deg);$('angle-label').textContent=fmt(deg,1)+'°';$('theta-value').textContent=fmt(deg,1)+'°';$('a-value').textContent='('+fmt(x,2)+'; '+fmt(y,2)+')';$('f-value').textContent=fmt(f(x,y));$('gf-value').textContent='('+fmt(gf[0],2)+'; '+fmt(gf[1],2)+')';$('gg-value').textContent='('+fmt(gg[0],2)+'; '+fmt(gg[1],2)+')';$('derivative').textContent=fmt(d);
+let parallel=Math.abs(d)<.0001,m=M();let message=parallel?'Gradientes paralelos: ∇f = '+fmt(f(x,y),0)+' ∇g. Derivada tangente zero. '+(Math.abs(f(x,y)-m.hi)<.0001?'Máximo restrito: primeira componente principal.':'Mínimo restrito: também satisfaz a condição de Lagrange.'):'A componente tangente de ∇f é diferente de zero. '+(d>0?'Aumentar θ faz f crescer localmente.':'Diminuir θ faz f crescer localmente.');if($('status').textContent!==message)$('status').textContent=message;}
+function drawCurve(){cx.clearRect(0,0,cw,ch);let pad=23,lo=M().lo,hi=M().hi,Y=v=>ch-23-(v-lo)/(hi-lo)*(ch-45),X=t=>pad+t/(2*Math.PI)*(cw-2*pad);cx.strokeStyle=colors.grid;cx.lineWidth=1;cx.beginPath();cx.moveTo(pad,12);cx.lineTo(pad,ch-23);cx.lineTo(cw-pad,ch-23);cx.stroke();cx.strokeStyle=colors.purple;cx.lineWidth=2;cx.beginPath();for(let i=0;i<=180;i++){let t=i*2*Math.PI/180,v=f(Math.cos(t),Math.sin(t));if(i===0)cx.moveTo(X(t),Y(v));else cx.lineTo(X(t),Y(v));}cx.stroke();cx.beginPath();cx.arc(X(theta),Y(f(Math.cos(theta),Math.sin(theta))),4.5,0,2*Math.PI);cx.fillStyle=colors.orange;cx.fill();cx.font='11px system-ui';cx.fillStyle=colors.muted;cx.textAlign='center';cx.fillText('0°',pad,ch-6);cx.fillText('180°',cw/2,ch-6);cx.fillText('360°',cw-pad,ch-6);cx.textAlign='left';cx.fillText(fmt(hi,0),2,19);cx.fillText(fmt(lo,0),2,ch-25);}
+function resize(){let r=canvas.parentElement.getBoundingClientRect();width=r.width;height=r.height;dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);let cr=curve.getBoundingClientRect();cw=cr.width;ch=cr.height;curve.width=Math.round(cw*dpr);curve.height=Math.round(ch*dpr);cx.setTransform(dpr,0,0,dpr,0,0);draw();}
+function stop(){playing=false;lastTime=0;cancelAnimationFrame(frame);$('play').textContent='Percorrer círculo';$('play').setAttribute('aria-pressed','false');}
+function setAngle(t){stop();theta=(t+2*Math.PI)%(2*Math.PI);draw();}
+function animate(time){if(!playing)return;if(lastTime)theta=(theta+Math.min(time-lastTime,50)*.00035)%(2*Math.PI);lastTime=time;draw();frame=requestAnimationFrame(animate);}
+$('angle').addEventListener('input',()=>{stop();theta=+$('angle').value*Math.PI/180;draw();});$('maximum').addEventListener('click',()=>setAngle(M().angle));$('minimum').addEventListener('click',()=>setAngle(M().angle+Math.PI/2));
+$('model').addEventListener('change',()=>{model=$('model').value;stop();refreshFormula();draw();});$('surface').addEventListener('change',()=>{surface=$('surface').value;refreshFormula();draw();});
+function refreshFormula(){$('surface-title').textContent=surface==='f'?'Maximizar a variância':'A função da restrição';$('formula').textContent=surface==='g'?'g(a) = a₁² + a₂² − 1':model==='diagonal'?'f(a) = 2a₁² + a₂²':'f(a) = 3a₁² + 4a₁a₂ + 3a₂²';}
+$('top').addEventListener('click',()=>{az=0;el=Math.PI/2;zoom=1;draw();});$('camera').addEventListener('click',()=>{az=.70;el=.49;zoom=1;draw();});$('play').addEventListener('click',()=>{if(playing)stop();else{playing=true;lastTime=0;$('play').textContent='Pausar';$('play').setAttribute('aria-pressed','true');frame=requestAnimationFrame(animate);}});
+for(let id of ['mesh','wall','gradients','tangent','levels'])$(id).addEventListener('change',draw);
+canvas.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);});canvas.addEventListener('pointermove',e=>{if(!drag)return;az-=(e.clientX-drag.x)*.008;el=Math.max(.08,Math.min(Math.PI/2,el+(e.clientY-drag.y)*.008));drag={x:e.clientX,y:e.clientY};draw();});canvas.addEventListener('pointerup',()=>drag=null);canvas.addEventListener('pointercancel',()=>drag=null);canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.55,Math.min(2.2,zoom*Math.exp(-e.deltaY*.001)));draw();},{passive:false});
+curve.addEventListener('pointerdown',e=>{let r=curve.getBoundingClientRect(),t=Math.max(0,Math.min(1,(e.clientX-r.left-23)/(cw-46)));setAngle(t*2*Math.PI);});
+$('fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{$('status').textContent='Use o modo de tela cheia do navegador para ampliar.';}});
+window.addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});new ResizeObserver(resize).observe(canvas.parentElement);refreshFormula();resize();
+// Funções matemáticas expostas para conferência local dos exemplos.
+window.pcaLagrange={value:(a1,a2)=>f(a1,a2),gradient:(a1,a2)=>{let m=M();return[2*(m.s11*a1+m.s12*a2),2*(m.s12*a1+m.s22*a2)];},setAngle,setModel:v=>{model=v;refreshFormula();draw();}};
+})();
+</script>
+</body>
+</html>

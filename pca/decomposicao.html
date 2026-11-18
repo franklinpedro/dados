@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Otimização Geométrica da PCA — Visualização 3D</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: rgba(15, 23, 42, 0.85);
+      --border: rgba(148, 163, 184, 0.22);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --purple: #a855f7;
+      --purple-light: #d8b4fe;
+      --green: #22c55e;
+      --amber: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      user-select: none;
+    }
+
+    .app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: radial-gradient(circle at 50% 45%, #1e293b 0%, #0b1120 100%);
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    .hud-panel {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      width: 295px;
+      background: var(--panel);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    }
+
+    .hud-title {
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: var(--purple-light);
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    .formula-box {
+      background: rgba(30, 41, 59, 0.7);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 8px 0;
+      font-family: "Cambria Math", "Times New Roman", serif;
+      font-size: 0.92rem;
+      color: #e2e8f0;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-label {
+      color: var(--muted);
+    }
+
+    .metric-value {
+      font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .legend {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--panel);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      pointer-events: none;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cbd5e1;
+    }
+
+    .swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .swatch-line {
+      width: 14px;
+      height: 3px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .controls {
+      flex: 0 0 auto;
+      width: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      z-index: 10;
+    }
+
+    .hint {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slider-group {
+      flex: 1 1 320px;
+      max-width: 560px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .slider-group label {
+      font-size: 0.85rem;
+      white-space: nowrap;
+      color: #e2e8f0;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--purple);
+      cursor: pointer;
+      height: 6px;
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    .readout-pill {
+      font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
+      color: #fbbf24;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    button:hover {
+      background: #334155;
+      border-color: rgba(148, 163, 184, 0.45);
+    }
+
+    @media (max-width: 780px) {
+      .legend {
+        display: none;
+      }
+      .hud-panel {
+        width: 250px;
+        font-size: 0.78rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="canvas-wrapper">
+      <canvas id="scene"></canvas>
+
+      <div class="hud-panel">
+        <div class="hud-title">Problema de Otimização (PCA)</div>
+        <div style="color: #cbd5e1; font-size: 0.8rem;">
+          Encontrar a direção unitária <strong>a</strong> que maximiza a variância projetada (ponto mais alto da curva roxa):
+        </div>
+        <div class="formula-box">
+          max<sub>a</sub> &nbsp;f(a) = a<sup>T</sup>&Sigma;a = 2a<sub>1</sub><sup>2</sup> + a<sub>2</sub><sup>2</sup><br>
+          s.a. &nbsp;&nbsp;||a|| = a<sub>1</sub><sup>2</sup> + a<sub>2</sub><sup>2</sup> = 1
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Ângulo &theta;:</span>
+          <span class="metric-value" id="val-theta">0.60 rad (34.4°)</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Direção a = (a<sub>1</sub>, a<sub>2</sub>):</span>
+          <span class="metric-value" id="val-a">(0.83, 0.56)</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Variância f(a):</span>
+          <span class="metric-value" style="color: #fbbf24;" id="val-f">1.681</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Máximo global (1ª CP):</span>
+          <span class="metric-value" style="color: #4ade80;">f(&plusmn;1, 0) = 2.000</span>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="swatch-line" style="background: rgba(148, 163, 184, 0.45);"></span>
+          <span>Superfície paraboloide f(a<sub>1</sub>, a<sub>2</sub>) = 2a<sub>1</sub><sup>2</sup> + a<sub>2</sub><sup>2</sup></span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch-line" style="background: rgba(168, 85, 247, 0.5);"></span>
+          <span>Círculo unitário ||a|| = 1 (z = 0) e parede cilíndrica</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch-line" style="background: #c084fc; height: 4px;"></span>
+          <span>Curva de interseção (variância sob ||a|| = 1)</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background: #22c55e;"></span>
+          <span>1ª CP (máximo): a = (&plusmn;1, 0), z = 2</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch" style="background: #f59e0b;"></span>
+          <span>Ponto móvel na curva de interseção</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="hint">&#8635; Arraste no gráfico para girar em 3D</div>
+
+      <div class="slider-group">
+        <label for="theta-slider">Ponto na curva roxa (&theta;):</label>
+        <input type="range" id="theta-slider" min="0" max="6.2831853" step="0.005" value="0.60" />
+        <span class="readout-pill" id="slider-readout">f = 1.681</span>
+      </div>
+
+      <div class="btn-group">
+        <button id="btn-max" title="Mover para a = (1, 0)">1ª CP (&theta; = 0)</button>
+        <button id="btn-reset" title="Restaurar câmera inicial">Resetar Câmera</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("scene");
+    const ctx = canvas.getContext("2d");
+
+    const slider = document.getElementById("theta-slider");
+    const sliderReadout = document.getElementById("slider-readout");
+    const valTheta = document.getElementById("val-theta");
+    const valA = document.getElementById("val-a");
+    const valF = document.getElementById("val-f");
+    const btnMax = document.getElementById("btn-max");
+    const btnReset = document.getElementById("btn-reset");
+
+    const INITIAL_AZIMUTH = 0.72;
+    const INITIAL_ELEVATION = 0.48;
+
+    let azimuth = INITIAL_AZIMUTH;
+    let elevation = INITIAL_ELEVATION;
+    let theta = parseFloat(slider.value);
+
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    function f(a1, a2) {
+      return 2 * a1 * a1 + a2 * a2;
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+
+    // Projeção 3D ortográfica centralizada e escalada proporcionalmente à tela
+    function project(x, y, z) {
+      const width = canvas.parentElement.clientWidth;
+      const height = canvas.parentElement.clientHeight;
+      const scale = Math.min(width * 0.22, height * 0.24);
+
+      const zCentered = z - 1.45;
+
+      // Rotação azimutal em torno de Z
+      const cosA = Math.cos(azimuth);
+      const sinA = Math.sin(azimuth);
+      const x1 = x * cosA - y * sinA;
+      const y1 = x * sinA + y * cosA;
+      const z1 = zCentered;
+
+      // Rotação de elevação em torno de X
+      const cosE = Math.cos(elevation);
+      const sinE = Math.sin(elevation);
+      const y2 = y1 * cosE - z1 * sinE;
+      const z2 = y1 * sinE + z1 * cosE;
+
+      const screenX = width * 0.5 + x1 * scale;
+      const screenY = height * 0.54 - z2 * scale;
+
+      return { x: screenX, y: screenY, depth: y2 };
+    }
+
+    function drawLine3D(p1, p2, color, width = 1, dash = []) {
+      const a = project(p1.x, p1.y, p1.z);
+      const b = project(p2.x, p2.y, p2.z);
+      ctx.save();
+      ctx.beginPath();
+      ctx.setLineDash(dash);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawAxes() {
+      const axisLen = 1.75;
+      const zMax = 3.7;
+
+      drawLine3D({ x: -axisLen, y: 0, z: 0 }, { x: axisLen, y: 0, z: 0 }, "rgba(148, 163, 184, 0.45)", 1.3);
+      drawLine3D({ x: 0, y: -axisLen, z: 0 }, { x: 0, y: axisLen, z: 0 }, "rgba(148, 163, 184, 0.45)", 1.3);
+      drawLine3D({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: zMax }, "rgba(148, 163, 184, 0.6)", 1.4);
+
+      const pX = project(axisLen + 0.15, 0, 0);
+      const pY = project(0, axisLen + 0.15, 0);
+      const pZ = project(0, 0, zMax + 0.18);
+
+      ctx.save();
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = "600 14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("a₁", pX.x, pX.y);
+      ctx.fillText("a₂", pY.x, pY.y);
+      ctx.fillText("z = f(a)", pZ.x, pZ.y);
+      ctx.restore();
+    }
+
+    function drawParaboloidWireframe() {
+      const min = -1.5;
+      const max = 1.5;
+      const steps = 18;
+      const stepSize = (max - min) / steps;
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.24)";
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i <= steps; i++) {
+        const a1 = min + i * stepSize;
+        ctx.beginPath();
+        for (let j = 0; j <= steps * 2; j++) {
+          const a2 = min + (j / (steps * 2)) * (max - min);
+          const p = project(a1, a2, f(a1, a2));
+          if (j === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+      }
+
+      for (let j = 0; j <= steps; j++) {
+        const a2 = min + j * stepSize;
+        ctx.beginPath();
+        for (let i = 0; i <= steps * 2; i++) {
+          const a1 = min + (i / (steps * 2)) * (max - min);
+          const p = project(a1, a2, f(a1, a2));
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawConstraintCylinder() {
+      const segments = 100;
+      const wallLines = 40;
+
+      // Círculo unitário no plano z = 0
+      ctx.save();
+      ctx.beginPath();
+      for (let i = 0; i <= segments; i++) {
+        const t = (i / segments) * Math.PI * 2;
+        const p = project(Math.cos(t), Math.sin(t), 0);
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "rgba(168, 85, 247, 0.14)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(168, 85, 247, 0.6)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      // Parede vertical do cilindro ||a|| = 1
+      ctx.save();
+      ctx.strokeStyle = "rgba(168, 85, 247, 0.28)";
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < wallLines; i++) {
+        const t = (i / wallLines) * Math.PI * 2;
+        const x = Math.cos(t);
+        const y = Math.sin(t);
+        const z = f(x, y);
+        const pBottom = project(x, y, 0);
+        const pTop = project(x, y, z);
+
+        ctx.beginPath();
+        ctx.moveTo(pBottom.x, pBottom.y);
+        ctx.lineTo(pTop.x, pTop.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Curva de interseção em roxo destaque
+      ctx.save();
+      ctx.beginPath();
+      for (let i = 0; i <= segments; i++) {
+        const t = (i / segments) * Math.PI * 2;
+        const x = Math.cos(t);
+        const y = Math.sin(t);
+        const p = project(x, y, f(x, y));
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = "#c084fc";
+      ctx.lineWidth = 3.8;
+      ctx.shadowColor = "rgba(192, 132, 252, 0.7)";
+      ctx.shadowBlur = 12;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawMaximumMarker() {
+      const maxPt = project(1, 0, 2);
+      drawLine3D({ x: 1, y: 0, z: 0 }, { x: 1, y: 0, z: 2 }, "rgba(34, 197, 94, 0.65)", 1.6, [4, 4]);
+
+      // Ponto simétrico em (-1, 0, 2)
+      const symPt = project(-1, 0, 2);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(symPt.x, symPt.y, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(34, 197, 94, 0.55)";
+      ctx.fill();
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.restore();
+
+      // Ponto verde principal em a = (1, 0), z = 2
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(maxPt.x, maxPt.y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = "#22c55e";
+      ctx.shadowColor = "rgba(34, 197, 94, 0.9)";
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+
+      // Rótulo "1ª CP (máximo)"
+      ctx.shadowBlur = 0;
+      const labelText = "1ª CP (máximo)";
+      ctx.font = "600 12.5px sans-serif";
+      const metrics = ctx.measureText(labelText);
+      const padX = 9;
+      const boxW = metrics.width + padX * 2;
+      const boxH = 24;
+      const lx = maxPt.x + 12;
+      const ly = maxPt.y - 26;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+      ctx.strokeStyle = "rgba(34, 197, 94, 0.7)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(lx, ly, boxW, boxH, 5);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#4ade80";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(labelText, lx + padX, ly + boxH / 2);
+      ctx.restore();
+    }
+
+    function drawMovingPoint() {
+      const a1 = Math.cos(theta);
+      const a2 = Math.sin(theta);
+      const zVal = f(a1, a2);
+
+      const pBase = project(a1, a2, 0);
+      const pCurve = project(a1, a2, zVal);
+
+      drawLine3D({ x: 0, y: 0, z: 0 }, { x: a1, y: a2, z: 0 }, "#f59e0b", 2.4);
+      drawLine3D({ x: a1, y: a2, z: 0 }, { x: a1, y: a2, z: zVal }, "#fbbf24", 2.1, [4, 3]);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(pBase.x, pBase.y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = "#f59e0b";
+      ctx.fill();
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(pCurve.x, pCurve.y, 7.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#f59e0b";
+      ctx.shadowColor = "rgba(245, 158, 11, 0.95)";
+      ctx.shadowBlur = 14;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      const tag = `a=(${a1.toFixed(2)}, ${a2.toFixed(2)}) | f=${zVal.toFixed(3)}`;
+      ctx.font = "600 12px ui-monospace, monospace";
+      const tw = ctx.measureText(tag).width + 16;
+      const th = 23;
+      const tx = pCurve.x - tw / 2;
+      const ty = pCurve.y - 32;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+      ctx.strokeStyle = "rgba(245, 158, 11, 0.8)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(tx, ty, tw, th, 5);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#fde68a";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(tag, tx + tw / 2, ty + th / 2);
+      ctx.restore();
+    }
+
+    function updateHUD() {
+      const a1 = Math.cos(theta);
+      const a2 = Math.sin(theta);
+      const zVal = f(a1, a2);
+      const deg = ((theta * 180) / Math.PI) % 360;
+
+      sliderReadout.textContent = `f = ${zVal.toFixed(3)}`;
+      valTheta.textContent = `${theta.toFixed(2)} rad (${deg.toFixed(1)}°)`;
+      valA.textContent = `(${a1.toFixed(2)}, ${a2.toFixed(2)})`;
+      valF.textContent = zVal.toFixed(3);
+    }
+
+    function draw() {
+      const width = canvas.parentElement.clientWidth;
+      const height = canvas.parentElement.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+
+      drawAxes();
+      drawParaboloidWireframe();
+      drawConstraintCylinder();
+      drawMaximumMarker();
+      drawMovingPoint();
+      updateHUD();
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastMouseX;
+      const dy = e.clientY - lastMouseY;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+
+      azimuth -= dx * 0.008;
+      elevation += dy * 0.008;
+      elevation = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, elevation));
+      draw();
+    });
+
+    window.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    canvas.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        isDragging = true;
+        lastMouseX = e.touches[0].clientX;
+        lastMouseY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    window.addEventListener("touchmove", (e) => {
+      if (!isDragging || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - lastMouseX;
+      const dy = e.touches[0].clientY - lastMouseY;
+      lastMouseX = e.touches[0].clientX;
+      lastMouseY = e.touches[0].clientY;
+
+      azimuth -= dx * 0.008;
+      elevation += dy * 0.008;
+      elevation = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, elevation));
+      draw();
+    }, { passive: true });
+
+    window.addEventListener("touchend", () => {
+      isDragging = false;
+    });
+
+    slider.addEventListener("input", () => {
+      theta = parseFloat(slider.value);
+      draw();
+    });
+
+    btnMax.addEventListener("click", () => {
+      theta = 0;
+      slider.value = "0";
+      draw();
+    });
+
+    btnReset.addEventListener("click", () => {
+      azimuth = INITIAL_AZIMUTH;
+      elevation = INITIAL_ELEVATION;
+      draw();
+    });
+
+    resizeCanvas();
+  </script>
+</body>
+</html>
